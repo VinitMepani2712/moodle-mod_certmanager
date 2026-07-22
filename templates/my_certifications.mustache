@@ -1,0 +1,89 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_certmanager/my_certifications
+
+    Learner view of their certifications as cards.
+
+    Context variables required for this template:
+    * hascertifications - Boolean: whether any certifications exist
+    * certifications - Array of certification data with:
+      - name: Certification name
+      - description: HTML description of certification
+      - statusstr: Current status text (e.g., "Certified", "Expired")
+      - statusclass: Bootstrap class for badge color (success, warning, danger)
+      - progresspct: Progress percentage (0-100)
+      - iscertified: Boolean: true if currently certified
+      - hasexpiry: Boolean: true if certification has expiry date
+      - expirydate: Formatted expiry date string
+      - certifieddate: Formatted certification date string
+
+    Example context (json):
+    {
+        "hascertifications": true,
+        "certifications": [
+            {
+                "name": "Fire Safety Certification",
+                "description": "<p>Annual fire safety and evacuation procedures.</p>",
+                "statusstr": "Certified",
+                "statusclass": "success",
+                "progresspct": 100,
+                "iscertified": true,
+                "hasexpiry": true,
+                "expirydate": "1 July 2027",
+                "certifieddate": "1 July 2026"
+            }
+        ]
+    }
+}}
+<div class="mod-certmanager-my">
+    {{^hascertifications}}
+        <div class="alert alert-info">{{#str}} nocertifications, mod_certmanager {{/str}}</div>
+    {{/hascertifications}}
+    {{#hascertifications}}
+        <div class="row">
+            {{#certifications}}
+                <div class="col-12 col-md-6 col-lg-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{name}}</h5>
+                            <span class="badge badge-{{statusclass}} bg-{{statusclass}} mb-2">{{statusstr}}</span>
+                            <div class="card-text">{{{description}}}</div>
+                            <div class="progress my-2" title="{{progresspct}}%">
+                                <div class="progress-bar" role="progressbar"
+                                    style="width: {{progresspct}}%;"
+                                    aria-valuenow="{{progresspct}}" aria-valuemin="0" aria-valuemax="100">
+                                    {{progresspct}}%
+                                </div>
+                            </div>
+                            {{#iscertified}}
+                                <p class="mb-0 small text-muted">
+                                    {{#str}} statuscertified, mod_certmanager {{/str}}: {{certifieddate}}
+                                </p>
+                            {{/iscertified}}
+                            {{#hasexpiry}}
+                                <p class="mb-0 small text-muted">
+                                    {{#str}} expires, mod_certmanager {{/str}}: {{expirydate}}
+                                </p>
+                            {{/hasexpiry}}
+                        </div>
+                    </div>
+                </div>
+            {{/certifications}}
+        </div>
+    {{/hascertifications}}
+</div>

@@ -1,0 +1,568 @@
+/* ============================================================
+   CERTIFICATE DESIGNER - Enhanced Drag & Drop UI
+   ============================================================ */
+
+/* Root color palette */
+:root {
+    --primary: #0d7a7a;
+    --primary-dark: #1a3a52;
+    --primary-light: #e8f4f8;
+    --accent: #2d4a63;
+    --border: #d0d7de;
+    --bg-light: #f8f9fa;
+    --text-dark: #1a3a52;
+    --text-muted: #6c757d;
+    --success: #28a745;
+    --warning: #ffc107;
+    --danger: #dc3545;
+}
+
+/* ============================================================
+   TOOLBAR (Keep existing - enhanced)
+   ============================================================ */
+.certmanager-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    margin-bottom: 20px;
+}
+
+.certmanager-toolbar label {
+    font-weight: 600;
+    color: var(--text-dark);
+    font-size: 14px;
+    margin: 0;
+}
+
+.certmanager-toolbar select {
+    padding: 8px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    background: white;
+    color: var(--text-dark);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 200ms ease;
+}
+
+.certmanager-toolbar select:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(13, 122, 122, 0.1);
+}
+
+.certmanager-toolbar select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(13, 122, 122, 0.15);
+}
+
+.certmanager-toolbar .btn {
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 6px;
+    border: none;
+    transition: all 200ms ease;
+    cursor: pointer;
+}
+
+.certmanager-toolbar .btn-outline-primary {
+    color: var(--primary);
+    background: transparent;
+    border: 1.5px solid var(--primary);
+}
+
+.certmanager-toolbar .btn-outline-primary:hover {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(13, 122, 122, 0.25);
+}
+
+.certmanager-toolbar .btn-outline-secondary {
+    color: var(--text-muted);
+    background: transparent;
+    border: 1.5px solid var(--border);
+}
+
+.certmanager-toolbar .btn-outline-secondary:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-light);
+}
+
+.certmanager-toolbar .btn-outline-danger {
+    color: #dc3545;
+    background: transparent;
+    border: 1.5px solid #dc3545;
+}
+
+.certmanager-toolbar .btn-outline-danger:hover {
+    background: #dc3545;
+    color: white;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.25);
+}
+
+/* ============================================================
+   MAIN LAYOUT
+   ============================================================ */
+.certmanager-design-wrap {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 24px;
+    margin-top: 20px;
+}
+
+@media (max-width: 1100px) {
+    .certmanager-design-wrap {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================================
+   CANVAS PANEL (Keep existing)
+   ============================================================ */
+.certmanager-canvas-panel {
+    background: linear-gradient(135deg, #f8f9fa 0%, #f0f2f5 100%);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.certmanager-canvas-hint {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    background: white;
+    border-left: 3px solid var(--primary);
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.certmanager-canvas {
+    position: relative;
+    width: 100%;
+    background: white;
+    border: 2px solid var(--primary-dark);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    background-image:
+        linear-gradient(rgba(26, 58, 82, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(26, 58, 82, 0.03) 1px, transparent 1px);
+    background-size: 2.5% 2.5%;
+}
+
+/* ============================================================
+   ELEMENTS IN CANVAS (Keep existing)
+   ============================================================ */
+.certmanager-el {
+    position: absolute;
+    box-sizing: border-box;
+    padding: 6px 8px;
+    outline: 2px dashed rgba(13, 122, 122, 0.4);
+    outline-offset: -1px;
+    cursor: move;
+    user-select: none;
+    line-height: 1.3;
+    background: rgba(255, 255, 255, 0.5);
+    min-width: 24px;
+    min-height: 20px;
+    z-index: 10;
+    transition: all 120ms ease;
+}
+
+.certmanager-el:hover {
+    outline: 2px solid var(--primary);
+    outline-offset: 0px;
+    background: rgba(13, 122, 122, 0.08);
+    box-shadow: 0 2px 8px rgba(13, 122, 122, 0.15);
+    z-index: 100;
+}
+
+.certmanager-el-content {
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    word-wrap: break-word;
+    font-size: 12px;
+    color: var(--text-dark);
+}
+
+/* ============================================================
+   BACKGROUND ELEMENT (Keep existing)
+   ============================================================ */
+.certmanager-el-background {
+    outline: 2px dashed rgba(13, 122, 122, 0.3) !important;
+    background: transparent !important;
+    cursor: default;
+    padding: 0;
+    z-index: 1 !important;
+}
+
+.certmanager-el-background:hover {
+    outline: 2px dashed rgba(13, 122, 122, 0.6) !important;
+    background: rgba(13, 122, 122, 0.02) !important;
+    z-index: 1 !important;
+}
+
+/* ============================================================
+   ELEMENT TOOLBAR IN CANVAS (Keep existing)
+   ============================================================ */
+.certmanager-el-toolbar {
+    position: absolute;
+    top: -28px;
+    right: -1px;
+    display: none;
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--accent) 100%);
+    color: white;
+    padding: 4px 6px;
+    border-radius: 6px 6px 0 0;
+    font-size: 12px;
+    z-index: 200;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.certmanager-el:hover .certmanager-el-toolbar {
+    display: flex;
+    gap: 6px;
+}
+
+.certmanager-btn {
+    color: white !important;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    text-decoration: none !important;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 150ms ease;
+}
+
+.certmanager-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.certmanager-btn-delete {
+    color: #ffb4b4 !important;
+}
+
+.certmanager-btn-delete:hover {
+    background: rgba(255, 180, 180, 0.2);
+}
+
+/* ============================================================
+   RESIZE HANDLE (Keep existing)
+   ============================================================ */
+.certmanager-el-resize {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 16px;
+    height: 16px;
+    background:
+        linear-gradient(135deg, transparent 48%, var(--primary) 48%, var(--primary) 52%, transparent 52%),
+        linear-gradient(135deg, transparent 68%, var(--primary) 68%, var(--primary) 72%, transparent 72%);
+    cursor: nwse-resize;
+    display: none;
+    z-index: 150;
+    border-radius: 2px;
+}
+
+.certmanager-el:hover .certmanager-el-resize {
+    display: block;
+}
+
+.certmanager-el-background .certmanager-el-resize {
+    display: none !important;
+}
+
+/* ============================================================
+   PLACEHOLDERS (Keep existing)
+   ============================================================ */
+.certmanager-qr-placeholder,
+.certmanager-bg-placeholder,
+.certmanager-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(13, 122, 122, 0.04) 0%, rgba(13, 122, 122, 0.08) 100%);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 11px;
+    text-align: center;
+    border: 1px dashed rgba(13, 122, 122, 0.3);
+    border-radius: 4px;
+}
+
+/* ============================================================
+   SIDE PANEL - ENHANCED DRAG & DROP
+   ============================================================ */
+.certmanager-side-panel {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    max-height: calc(100vh - 250px);
+    overflow-y: auto;
+}
+
+.certmanager-side-panel h4 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--primary);
+    color: var(--text-dark);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.certmanager-el-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* ===== ENHANCED: Draggable list item ===== */
+.certmanager-el-list li {
+    padding: 12px 12px 12px 40px;
+    background: var(--bg-light);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    cursor: grab;
+}
+
+.certmanager-el-list li:hover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    box-shadow: 0 2px 8px rgba(13, 122, 122, 0.1);
+    transform: translateX(2px);
+}
+
+.certmanager-el-list li:active {
+    cursor: grabbing;
+}
+
+/* ===== Drag handle icon ===== */
+.certmanager-el-list li::before {
+    content: "⋮⋮";
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    color: var(--primary);
+    font-weight: bold;
+    cursor: grab;
+    user-select: none;
+    opacity: 0.7;
+    transition: all 200ms ease;
+}
+
+.certmanager-el-list li:hover::before {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.1);
+}
+
+/* ===== During drag ===== */
+.certmanager-el-list li.dragging {
+    opacity: 0.5;
+    background: rgba(13, 122, 122, 0.05);
+    border: 2px dashed var(--primary);
+    transform: scale(0.98) !important;
+    box-shadow: 0 8px 20px rgba(13, 122, 122, 0.25);
+}
+
+/* ===== Drag over (shows drop position) ===== */
+.certmanager-el-list li.drag-over-top {
+    border-top: 3px solid var(--primary);
+    margin-top: 8px;
+}
+
+.certmanager-el-list li.drag-over-bottom {
+    border-bottom: 3px solid var(--primary);
+    margin-bottom: 8px;
+}
+
+/* ===== Background element styling ===== */
+.certmanager-el-list li.is-background {
+    background: linear-gradient(135deg, #e8f4f8 0%, #d9ecf1 100%);
+    border-color: var(--primary);
+    border-left-width: 4px;
+    cursor: default;
+    /* Not draggable */
+}
+
+.certmanager-el-list li.is-background::before {
+    content: "🖼";
+    font-size: 14px;
+    cursor: default;
+    opacity: 0.5;
+}
+
+.certmanager-el-list li.is-background:hover::before {
+    transform: translateY(-50%);
+    opacity: 0.5;
+}
+
+.certmanager-el-list li.is-background .certmanager-el-list-name::before {
+    content: "";
+}
+
+/* ===== Element header ===== */
+.certmanager-el-list-head {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.certmanager-el-list-name {
+    font-weight: 600;
+    color: var(--text-dark);
+    font-size: 13px;
+    flex: 1;
+}
+
+.certmanager-el-list-type {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 400;
+}
+
+/* ===== Element actions ===== */
+.certmanager-el-list-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.certmanager-el-list-actions .btn {
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: white;
+    color: var(--text-dark);
+    cursor: pointer;
+    transition: all 150ms ease;
+}
+
+.certmanager-el-list-actions .btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-light);
+    box-shadow: 0 2px 6px rgba(13, 122, 122, 0.12);
+    transform: translateY(-1px);
+}
+
+.certmanager-el-list-actions .btn-outline-primary {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.certmanager-el-list-actions .btn-outline-danger {
+    color: #dc3545;
+    border-color: #dc3545;
+}
+
+.certmanager-el-list-actions .btn-outline-danger:hover {
+    background: #dc3545;
+    color: white;
+}
+
+.certmanager-el-list-actions .btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ===== Hide old up/down buttons when dragging enabled ===== */
+.certmanager-el-list.drag-enabled li:not(.is-background) .move-buttons {
+    display: none;
+}
+
+/* ===== Drag disabled hint ===== */
+.certmanager-el-list li.is-background .certmanager-el-list-actions::after {
+    content: "(background element, click to edit)";
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-left: auto;
+    font-weight: 400;
+}
+
+/* ============================================================
+   DRAGGING STATE
+   ============================================================ */
+.dragging {
+    opacity: 0.9;
+    box-shadow: 0 8px 20px rgba(13, 122, 122, 0.3) !important;
+    z-index: 100 !important;
+    background: rgba(13, 122, 122, 0.12) !important;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+    .certmanager-toolbar {
+        padding: 12px 14px;
+        gap: 8px;
+    }
+
+    .certmanager-design-wrap {
+        gap: 16px;
+    }
+
+    .certmanager-side-panel {
+        max-height: 50vh;
+    }
+
+    .certmanager-el-list li {
+        padding: 10px 10px 10px 35px;
+    }
+}
+
+/* ============================================================
+   SCROLLBAR STYLING
+   ============================================================ */
+.certmanager-side-panel::-webkit-scrollbar {
+    width: 8px;
+}
+
+.certmanager-side-panel::-webkit-scrollbar-track {
+    background: var(--bg-light);
+    border-radius: 10px;
+}
+
+.certmanager-side-panel::-webkit-scrollbar-thumb {
+    background: rgba(13, 122, 122, 0.3);
+    border-radius: 10px;
+    transition: background 200ms ease;
+}
+
+.certmanager-side-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(13, 122, 122, 0.6);
+}
