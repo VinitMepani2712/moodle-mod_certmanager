@@ -15,14 +15,6 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Test data generator for the mod_certmanager plugin.
- *
- * @package    mod_certmanager
- * @copyright  2026 Vinit Mepani
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-/**
  * Generates certmanager activity instances for PHPUnit and Behat tests.
  *
  * @package    mod_certmanager

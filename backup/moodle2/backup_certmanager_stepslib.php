@@ -14,61 +14,183 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-defined('MOODLE_INTERNAL') || die();
-
-require_once($CFG->dirroot . '/mod/certmanager/backup/moodle2/backup_certmanager_stepslib.php');
-
 /**
- * Provides the steps to perform one complete backup of a certmanager activity.
+ * Defines the complete certmanager structure for backup, with file and id annotations.
  *
  * @package     mod_certmanager
  * @copyright   2026 Vinit Mepani
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class backup_certmanager_activity_task extends backup_activity_task {
+class backup_certmanager_activity_structure_step extends backup_activity_structure_step {
     /**
-     * Define particular settings this activity can have.
+     * Define the structure of the certmanager activity backup.
      *
-     * @return void
+     * @return backup_nested_element The wrapped activity structure.
      */
-    protected function define_my_settings() {
-        // No particular settings for this activity.
-    }
+    protected function define_structure() {
 
-    /**
-     * Define particular steps this activity can have.
-     *
-     * @return void
-     */
-    protected function define_my_steps() {
-        $this->add_step(new backup_certmanager_activity_structure_step('certmanager_structure', 'certmanager.xml'));
-    }
+        // Are we including user info in this backup?
+        $userinfo = $this->get_setting_value('userinfo');
 
-    /**
-     * Encode all the content links of this activity to be transportable.
-     *
-     * @param string $content Content to encode.
-     * @return string The encoded content.
-     */
-    public static function encode_content_links($content) {
-        global $CFG;
+        // Define each element separated.
+        $certmanager = new backup_nested_element('certmanager', ['id'], [
+            'name',
+            'intro',
+            'introformat',
+            'validityperiod',
+            'windowperiod',
+            'graceperiod',
+            'enablecertificate',
+            'enableautowage',
+            'awardtype',
+            'minrequired',
+            'orientation',
+            'pagewidth',
+            'pageheight',
+            'timemodified',
+            'usermodified',
+            'timecreated',
+        ]);
 
-        $base = preg_quote($CFG->wwwroot . '/mod/certmanager', '#');
+        $certelements = new backup_nested_element('certelements');
+        $certelement = new backup_nested_element('certelement', ['id'], [
+            'element',
+            'name',
+            'data',
+            'font',
+            'fontsize',
+            'colour',
+            'posx',
+            'posy',
+            'width',
+            'height',
+            'alignment',
+            'sortorder',
+            'timemodified',
+        ]);
 
-        // Link to the list of certmanager instances in a course.
-        $content = preg_replace(
-            "#($base)/index\.php\?id=(\d+)#",
-            '$@CERTMANAGERINDEX*$2@$',
-            $content
+        $requireds = new backup_nested_element('requireds');
+        $required = new backup_nested_element('required', ['id'], [
+            'cmid',
+            'timecreated',
+        ]);
+
+        $states = new backup_nested_element('states');
+        $state = new backup_nested_element('state', ['id'], [
+            'userid',
+            'status',
+            'progresspct',
+            'timecertified',
+            'timeexpires',
+            'timewindowopens',
+            'timelapsed',
+            'usermodified',
+            'timecreated',
+            'timemodified',
+        ]);
+
+        $certificates = new backup_nested_element('certificates');
+        $certificate = new backup_nested_element('certificate', ['id'], [
+            'userid',
+            'code',
+            'codehash',
+            'timecertified',
+            'timeexpires',
+            'timecreated',
+            'timemodified',
+        ]);
+
+        $histories = new backup_nested_element('histories');
+        $history = new backup_nested_element('history', ['id'], [
+            'userid',
+            'fromstatus',
+            'tostatus',
+            'reason',
+            'actorid',
+            'timecreated',
+        ]);
+
+        // Build the tree.
+        $certmanager->add_child($certelements);
+        $certelements->add_child($certelement);
+
+        $certmanager->add_child($requireds);
+        $requireds->add_child($required);
+
+        $certmanager->add_child($states);
+        $states->add_child($state);
+
+        $certmanager->add_child($certificates);
+        $certificates->add_child($certificate);
+
+        $certmanager->add_child($histories);
+        $histories->add_child($history);
+
+        // Define sources.
+        $certmanager->set_source_table('certmanager', ['id' => backup::VAR_ACTIVITYID]);
+
+        $certelement->set_source_table(
+            'certmanager_elements',
+            ['certmanagerid' => backup::VAR_PARENTID],
+            'sortorder ASC, id ASC'
         );
 
-        // Link to a certmanager view page by course module id.
-        $content = preg_replace(
-            "#($base)/view\.php\?id=(\d+)#",
-            '$@CERTMANAGERVIEWBYID*$2@$',
-            $content
+        $required->set_source_table(
+            'certmanager_required',
+            ['certmanagerid' => backup::VAR_PARENTID],
+            'id ASC'
         );
 
-        return $content;
+        // User data sources: only included when userinfo is requested.
+        if ($userinfo) {
+            $state->set_source_table(
+                'certmanager_state',
+                ['certmanagerid' => backup::VAR_PARENTID],
+                'id ASC'
+            );
+
+            $certificate->set_source_table(
+                'certmanager_certificates',
+                ['certmanagerid' => backup::VAR_PARENTID],
+                'id ASC'
+            );
+
+            $history->set_source_table(
+                'certmanager_history',
+                ['certmanagerid' => backup::VAR_PARENTID],
+                'id ASC'
+            );
+        }
+
+        // Define id annotations.
+        $certmanager->annotate_ids('user', 'usermodified');
+
+        // Required activities point at other course modules in the same course.
+        // Annotating them is what makes the remap in after_restore() possible.
+        $required->annotate_ids('course_module', 'cmid');
+
+        $state->annotate_ids('user', 'userid');
+        $state->annotate_ids('user', 'usermodified');
+        $certificate->annotate_ids('user', 'userid');
+        $history->annotate_ids('user', 'userid');
+        $history->annotate_ids('user', 'actorid');
+
+        // Define file annotations.
+        // Activity description files (itemid is not used).
+        $certmanager->annotate_files('mod_certmanager', 'intro', null);
+
+        // Design-level image areas always use itemid 0.
+        $certmanager->annotate_files('mod_certmanager', 'background', null);
+        $certmanager->annotate_files('mod_certmanager', 'logo', null);
+        $certmanager->annotate_files('mod_certmanager', 'signature', null);
+
+        // Per-element images use the element id as itemid.
+        $certelement->annotate_files('mod_certmanager', 'elementfiles', 'id');
+
+        // Generated certificate PDFs use the user id as itemid.
+        $certificate->annotate_files('mod_certmanager', 'certificates', 'userid');
+
+        // Return the root element, wrapped into standard activity structure.
+        return $this->prepare_activity_structure($certmanager);
     }
 }

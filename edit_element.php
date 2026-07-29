@@ -91,9 +91,11 @@ if ($form->is_cancelled()) {
 }
 
 if ($data = $form->get_data()) {
-    // Debug: Log what we're saving
+    // Debug: Log what we're saving.
     if (!empty($data->fontsize) || !empty($data->colour)) {
-        debugging("Saving element {$element->get_id()}: fontsize={$data->fontsize}, colour={$data->colour}, font={$data->font}, alignment={$data->alignment}", DEBUG_DEVELOPER);
+        $msg = "Saving element {$element->get_id()}: fontsize={$data->fontsize}, " .
+            "colour={$data->colour}, font={$data->font}, alignment={$data->alignment}";
+        debugging($msg, DEBUG_DEVELOPER);
     }
 
     // Update geometry/style.

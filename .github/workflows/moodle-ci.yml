@@ -47,15 +47,6 @@ jobs:
         with:
           path: plugin
 
-      # This block depends on availability_prerequisite. moodle-plugin-ci needs
-      # that plugin present to install the site, so check it out too.
-      # Adjust "repository" if your dependency lives elsewhere.
-      - name: Check out dependency (availability_prerequisite)
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ github.repository_owner }}/moodle-availability_prerequisite
-          path: deps/availability_prerequisite
-
       - name: Setup PHP ${{ matrix.php }}
         uses: shivammathur/setup-php@v2
         with:

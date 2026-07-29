@@ -1,6 +1,6 @@
-/* ============================================================
+/* 
    CERTIFICATE DESIGNER - Enhanced Drag & Drop UI
-   ============================================================ */
+    */
 
 /* Root color palette */
 :root {
@@ -17,9 +17,9 @@
     --danger: #dc3545;
 }
 
-/* ============================================================
+/* 
    TOOLBAR (Keep existing - enhanced)
-   ============================================================ */
+    */
 .certmanager-toolbar {
     display: flex;
     align-items: center;
@@ -109,9 +109,9 @@
     box-shadow: 0 4px 12px rgba(220, 53, 69, 0.25);
 }
 
-/* ============================================================
+/* 
    MAIN LAYOUT
-   ============================================================ */
+    */
 .certmanager-design-wrap {
     display: grid;
     grid-template-columns: 1fr 380px;
@@ -125,9 +125,9 @@
     }
 }
 
-/* ============================================================
+/* 
    CANVAS PANEL (Keep existing)
-   ============================================================ */
+    */
 .certmanager-canvas-panel {
     background: linear-gradient(135deg, #f8f9fa 0%, #f0f2f5 100%);
     padding: 20px;
@@ -161,9 +161,9 @@
     background-size: 2.5% 2.5%;
 }
 
-/* ============================================================
+/* 
    ELEMENTS IN CANVAS (Keep existing)
-   ============================================================ */
+    */
 .certmanager-el {
     position: absolute;
     box-sizing: border-box;
@@ -198,9 +198,9 @@
     color: var(--text-dark);
 }
 
-/* ============================================================
+/* 
    BACKGROUND ELEMENT (Keep existing)
-   ============================================================ */
+    */
 .certmanager-el-background {
     outline: 2px dashed rgba(13, 122, 122, 0.3) !important;
     background: transparent !important;
@@ -215,9 +215,9 @@
     z-index: 1 !important;
 }
 
-/* ============================================================
+/* 
    ELEMENT TOOLBAR IN CANVAS (Keep existing)
-   ============================================================ */
+    */
 .certmanager-el-toolbar {
     position: absolute;
     top: -28px;
@@ -262,9 +262,9 @@
     background: rgba(255, 180, 180, 0.2);
 }
 
-/* ============================================================
+/* 
    RESIZE HANDLE (Keep existing)
-   ============================================================ */
+    */
 .certmanager-el-resize {
     position: absolute;
     bottom: 0;
@@ -288,9 +288,9 @@
     display: none !important;
 }
 
-/* ============================================================
+/* 
    PLACEHOLDERS (Keep existing)
-   ============================================================ */
+    */
 .certmanager-qr-placeholder,
 .certmanager-bg-placeholder,
 .certmanager-placeholder {
@@ -308,9 +308,9 @@
     border-radius: 4px;
 }
 
-/* ============================================================
+/* 
    SIDE PANEL - ENHANCED DRAG & DROP
-   ============================================================ */
+    */
 .certmanager-side-panel {
     background: white;
     padding: 20px;
@@ -338,7 +338,7 @@
     margin: 0;
 }
 
-/* ===== ENHANCED: Draggable list item ===== */
+/*  ENHANCED: Draggable list item  */
 .certmanager-el-list li {
     padding: 12px 12px 12px 40px;
     background: var(--bg-light);
@@ -364,7 +364,7 @@
     cursor: grabbing;
 }
 
-/* ===== Drag handle icon ===== */
+/*  Drag handle icon  */
 .certmanager-el-list li::before {
     content: "⋮⋮";
     position: absolute;
@@ -385,7 +385,7 @@
     transform: translateY(-50%) scale(1.1);
 }
 
-/* ===== During drag ===== */
+/*  During drag  */
 .certmanager-el-list li.dragging {
     opacity: 0.5;
     background: rgba(13, 122, 122, 0.05);
@@ -394,7 +394,7 @@
     box-shadow: 0 8px 20px rgba(13, 122, 122, 0.25);
 }
 
-/* ===== Drag over (shows drop position) ===== */
+/*  Drag over (shows drop position)  */
 .certmanager-el-list li.drag-over-top {
     border-top: 3px solid var(--primary);
     margin-top: 8px;
@@ -405,7 +405,7 @@
     margin-bottom: 8px;
 }
 
-/* ===== Background element styling ===== */
+/*  Background element styling  */
 .certmanager-el-list li.is-background {
     background: linear-gradient(135deg, #e8f4f8 0%, #d9ecf1 100%);
     border-color: var(--primary);
@@ -430,7 +430,7 @@
     content: "";
 }
 
-/* ===== Element header ===== */
+/*  Element header  */
 .certmanager-el-list-head {
     display: flex;
     align-items: baseline;
@@ -450,7 +450,7 @@
     font-weight: 400;
 }
 
-/* ===== Element actions ===== */
+/*  Element actions  */
 .certmanager-el-list-actions {
     display: flex;
     flex-wrap: wrap;
@@ -499,12 +499,12 @@
     cursor: not-allowed;
 }
 
-/* ===== Hide old up/down buttons when dragging enabled ===== */
+/*  Hide old up/down buttons when dragging enabled  */
 .certmanager-el-list.drag-enabled li:not(.is-background) .move-buttons {
     display: none;
 }
 
-/* ===== Drag disabled hint ===== */
+/*  Drag disabled hint  */
 .certmanager-el-list li.is-background .certmanager-el-list-actions::after {
     content: "(background element, click to edit)";
     font-size: 11px;
@@ -513,9 +513,7 @@
     font-weight: 400;
 }
 
-/* ============================================================
-   DRAGGING STATE
-   ============================================================ */
+/*  DRAGGING STATE */
 .dragging {
     opacity: 0.9;
     box-shadow: 0 8px 20px rgba(13, 122, 122, 0.3) !important;
@@ -523,9 +521,7 @@
     background: rgba(13, 122, 122, 0.12) !important;
 }
 
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
+/* RESPONSIVE */
 @media (max-width: 768px) {
     .certmanager-toolbar {
         padding: 12px 14px;
@@ -545,9 +541,7 @@
     }
 }
 
-/* ============================================================
-   SCROLLBAR STYLING
-   ============================================================ */
+/* SCROLLBAR STYLING */
 .certmanager-side-panel::-webkit-scrollbar {
     width: 8px;
 }
