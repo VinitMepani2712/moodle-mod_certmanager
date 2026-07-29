@@ -91,6 +91,11 @@ if ($form->is_cancelled()) {
 }
 
 if ($data = $form->get_data()) {
+    // Debug: Log what we're saving
+    if (!empty($data->fontsize) || !empty($data->colour)) {
+        debugging("Saving element {$element->get_id()}: fontsize={$data->fontsize}, colour={$data->colour}, font={$data->font}, alignment={$data->alignment}", DEBUG_DEVELOPER);
+    }
+
     // Update geometry/style.
     manager::update_geometry($element->get_id(), [
         'posx' => (float)$data->posx,
@@ -108,50 +113,66 @@ if ($data = $form->get_data()) {
     // Save any files (images).
     $element->after_save($data, $context);
 
+    // Clear Moodle cache to force refresh of element data.
+    purge_all_caches();
+
     redirect($backurl, get_string('elementsaved', 'mod_certmanager'), null, \core\output\notification::NOTIFY_SUCCESS);
 }
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('editelementheading', 'mod_certmanager', s($element->get_name())));
 
+// Load stylesheet for split-screen layout.
+$PAGE->requires->css('/mod/certmanager/styles/edit_element.css');
+
 // Render canvas preview and form side-by-side.
 echo '<div class="certmanager-edit-container">';
 
-// Left side: Form
+// Left side: Form.
 echo '<div class="certmanager-edit-form">';
 $form->display();
 echo '</div>';
 
-// Right side: Canvas preview
+// Right side: Canvas preview.
 echo '<div class="certmanager-edit-preview">';
 echo '<h3>' . get_string('preview', 'mod_certmanager') . '</h3>';
 
 // Render a mini canvas showing the current element.
-echo '<div id="certmanager-element-preview" class="certmanager-preview-canvas" style="width: 400px; height: 283px; background: white; border: 1px solid #ccc; position: relative; overflow: hidden;">';
+$previewstyle = 'width: 400px; height: 283px; background: white; ' .
+    'border: 1px solid #ccc; position: relative; overflow: hidden;';
+echo '<div id="certmanager-element-preview" class="certmanager-preview-canvas" style="' . $previewstyle . '">';
 
 // Clone the element from the main canvas for preview.
 $elementhtml = '<div class="certmanager-el certmanager-el-' . $element->get_type() . '" ';
 $elementhtml .= 'data-eid="' . $element->get_id() . '" ';
-$elementhtml .= 'style="position: absolute; ';
-$elementhtml .= 'left: ' . (($element->get_posx() / 297) * 100) . '%; ';
-$elementhtml .= 'top: ' . (($element->get_posy() / 210) * 100) . '%; ';
+
+// Build inline styles for position and size (dynamic values).
+$elementstyle = 'position: absolute; ';
+$elementstyle .= 'left: ' . (($element->get_posx() / 297) * 100) . '%; ';
+$elementstyle .= 'top: ' . (($element->get_posy() / 210) * 100) . '%; ';
 if ($element->get_width() > 0) {
-    $elementhtml .= 'width: ' . (($element->get_width() / 297) * 100) . '%; ';
+    $elementstyle .= 'width: ' . (($element->get_width() / 297) * 100) . '%; ';
 }
 if ($element->get_height() > 0) {
-    $elementhtml .= 'height: ' . (($element->get_height() / 210) * 100) . '%; ';
+    $elementstyle .= 'height: ' . (($element->get_height() / 210) * 100) . '%; ';
 }
-$elementhtml .= 'font-family: ' . $element->get_font() . '; ';
-$elementhtml .= 'font-size: ' . $element->get_fontsize() . 'pt; ';
-$elementhtml .= 'color: ' . $element->get_colour() . '; ';
-$elementhtml .= 'text-align: ' . ($element->get_alignment() === 'L' ? 'left' : ($element->get_alignment() === 'R' ? 'right' : 'center')) . '; ';
-$elementhtml .= '">';
+$elementstyle .= 'font-family: ' . $element->get_font() . '; ';
+$elementstyle .= 'font-size: ' . $element->get_fontsize() . 'pt; ';
+$elementstyle .= 'color: ' . $element->get_colour() . '; ';
+$alignment = $element->get_alignment();
+$textalign = 'center';
+if ($alignment === 'L') {
+    $textalign = 'left';
+} else if ($alignment === 'R') {
+    $textalign = 'right';
+}
+$elementstyle .= 'text-align: ' . $textalign . '; ';
+$elementhtml .= 'style="' . $elementstyle . '">';
 
 // Get element display content.
-// For preview, use render_html with dummy course/certmanager.
-$dummyCourse = (object)['id' => 0, 'fullname' => 'Course Name'];
-$dummyCertmanager = (object)['name' => 'Certification Name'];
-$elementhtml .= $element->render_html($dummyCertmanager, $dummyCourse);
+$dummycourse = (object)['id' => 0, 'fullname' => 'Course Name'];
+$dummycertmanager = (object)['name' => 'Certification Name'];
+$elementhtml .= $element->render_html($dummycertmanager, $dummycourse);
 $elementhtml .= '</div>';
 
 echo $elementhtml;
@@ -159,54 +180,6 @@ echo '</div>';
 echo '</div>';
 
 echo '</div>';
-
-// CSS for layout.
-$css = <<<CSS
-<style>
-.certmanager-edit-container {
-    display: flex;
-    gap: 20px;
-    margin-top: 20px;
-}
-.certmanager-edit-form {
-    flex: 1;
-    min-width: 400px;
-}
-.certmanager-edit-preview {
-    flex: 0 0 420px;
-    padding: 15px;
-    background: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    max-height: 600px;
-    overflow-y: auto;
-}
-.certmanager-edit-preview h3 {
-    margin-top: 0;
-    font-size: 16px;
-    color: #333;
-}
-.certmanager-preview-canvas {
-    background: white !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    transform: scale(0.75);
-    transform-origin: top left;
-    width: 533px;
-    height: 377px;
-}
-@media (max-width: 1200px) {
-    .certmanager-edit-container {
-        flex-direction: column;
-    }
-    .certmanager-edit-preview {
-        flex: 0 0 auto;
-        max-height: none;
-    }
-}
-</style>
-CSS;
-
-echo $css;
 
 // Initialize live preview.
 $PAGE->requires->js_call_amd('mod_certmanager/element_preview_form', 'init', [$element->get_id()]);

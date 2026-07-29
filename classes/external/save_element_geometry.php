@@ -16,8 +16,6 @@
 
 namespace mod_certmanager\external;
 
-defined('MOODLE_INTERNAL') || die();
-
 use external_api;
 use external_function_parameters;
 use external_single_structure;
@@ -32,13 +30,12 @@ use mod_certmanager\element\manager;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class save_element_geometry extends external_api {
-
     /**
-     * Parameter validation for save_element_geometry.
+     * Parameter validation for execute().
      *
      * @return external_function_parameters
      */
-    public static function save_element_geometry_parameters(): external_function_parameters {
+    public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
             'cmid' => new external_value(PARAM_INT, 'Course module ID'),
             'eid' => new external_value(PARAM_INT, 'Element ID'),
@@ -62,7 +59,7 @@ class save_element_geometry extends external_api {
      * @throws \dml_exception
      * @throws \moodle_exception
      */
-    public static function save_element_geometry(
+    public static function execute(
         int $cmid,
         int $eid,
         float $posx,
@@ -73,7 +70,7 @@ class save_element_geometry extends external_api {
         global $DB;
 
         // Validate parameters.
-        $params = self::validate_parameters(self::save_element_geometry_parameters(), [
+        $params = self::validate_parameters(self::execute_parameters(), [
             'cmid' => $cmid,
             'eid' => $eid,
             'posx' => $posx,
@@ -116,11 +113,11 @@ class save_element_geometry extends external_api {
     }
 
     /**
-     * Return value for save_element_geometry.
+     * Return value for execute().
      *
      * @return external_single_structure
      */
-    public static function save_element_geometry_returns(): external_single_structure {
+    public static function execute_returns(): external_single_structure {
         return new external_single_structure([
             'ok' => new external_value(PARAM_BOOL, 'Operation successful'),
         ]);

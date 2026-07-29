@@ -33,7 +33,7 @@ $services = [
             'mod_certmanager_save_element_geometry',
             'mod_certmanager_reorder_elements',
         ],
-        'restrictedusers' => 0,  // Service is available to all authenticated users.
+        'restrictedusers' => 0, // Service is available to all authenticated users.
         'enabled' => 1,
     ],
 ];
@@ -42,7 +42,7 @@ $functions = [
     // Save element position/size from designer canvas.
     'mod_certmanager_save_element_geometry' => [
         'classname' => 'mod_certmanager\external\save_element_geometry',
-        'methodname' => 'save_element_geometry',
+        'methodname' => 'execute',
         'classpath' => 'mod/certmanager/classes/external/save_element_geometry.php',
         'description' => 'Save certificate element geometry (position and size)',
         'type' => 'write',
@@ -52,7 +52,7 @@ $functions = [
     // Reorder elements via side panel drag-drop.
     'mod_certmanager_reorder_elements' => [
         'classname' => 'mod_certmanager\external\reorder_elements',
-        'methodname' => 'reorder_elements',
+        'methodname' => 'execute',
         'classpath' => 'mod/certmanager/classes/external/reorder_elements.php',
         'description' => 'Reorder certificate elements',
         'type' => 'write',

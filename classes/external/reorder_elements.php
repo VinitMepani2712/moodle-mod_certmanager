@@ -16,8 +16,6 @@
 
 namespace mod_certmanager\external;
 
-defined('MOODLE_INTERNAL') || die();
-
 use external_api;
 use external_function_parameters;
 use external_multiple_structure;
@@ -32,13 +30,12 @@ use external_value;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class reorder_elements extends external_api {
-
     /**
-     * Parameter validation for reorder_elements.
+     * Parameter validation for execute().
      *
      * @return external_function_parameters
      */
-    public static function reorder_elements_parameters(): external_function_parameters {
+    public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
             'cmid' => new external_value(PARAM_INT, 'Course module ID'),
             'order' => new external_multiple_structure(
@@ -57,11 +54,11 @@ class reorder_elements extends external_api {
      * @throws \dml_exception
      * @throws \moodle_exception
      */
-    public static function reorder_elements(int $cmid, array $order): array {
+    public static function execute(int $cmid, array $order): array {
         global $DB;
 
         // Validate parameters.
-        $params = self::validate_parameters(self::reorder_elements_parameters(), [
+        $params = self::validate_parameters(self::execute_parameters(), [
             'cmid' => $cmid,
             'order' => $order,
         ]);
@@ -111,11 +108,11 @@ class reorder_elements extends external_api {
     }
 
     /**
-     * Return value for reorder_elements.
+     * Return value for execute().
      *
      * @return external_single_structure
      */
-    public static function reorder_elements_returns(): external_single_structure {
+    public static function execute_returns(): external_single_structure {
         return new external_single_structure([
             'ok' => new external_value(PARAM_BOOL, 'Operation successful'),
         ]);

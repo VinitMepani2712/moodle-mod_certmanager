@@ -1,4 +1,3 @@
-
 <?php
 // This file is part of Moodle - https://moodle.org/
 //
@@ -27,7 +26,6 @@ require_once($CFG->dirroot . '/mod/certmanager/backup/moodle2/backup_certmanager
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class backup_certmanager_activity_task extends backup_activity_task {
-
     /**
      * Define particular settings this activity can have.
      *

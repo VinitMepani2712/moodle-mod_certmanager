@@ -205,4 +205,3 @@ function certmanager_save_required_activities($certmanagerid, $data) {
         }
     }
 }
-

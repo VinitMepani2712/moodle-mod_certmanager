@@ -39,7 +39,6 @@ class provider implements
     \core_privacy\local\metadata\provider,
     \core_privacy\local\request\core_userlist_provider,
     \core_privacy\local\request\plugin\provider {
-
     /**
      * Describe the personal data stored by this plugin.
      *
@@ -377,21 +376,33 @@ class provider implements
         [$insql, $inparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
 
         // Delete state records and associated history for all these users.
-        $DB->delete_records_select('certmanager_history', "certmanagerid = ? AND userid $insql",
-            array_merge([$certid], $inparams));
-        $DB->delete_records_select('certmanager_state', "certmanagerid = ? AND userid $insql",
-            array_merge([$certid], $inparams));
+        $DB->delete_records_select(
+            'certmanager_history',
+            "certmanagerid = ? AND userid $insql",
+            array_merge([$certid], $inparams)
+        );
+        $DB->delete_records_select(
+            'certmanager_state',
+            "certmanagerid = ? AND userid $insql",
+            array_merge([$certid], $inparams)
+        );
 
         // Delete certificates and their files for all these users.
         $fs = get_file_storage();
-        $certificates = $DB->get_records_select('certmanager_certificates',
-            "certmanagerid = ? AND userid $insql", array_merge([$certid], $inparams));
+        $certificates = $DB->get_records_select(
+            'certmanager_certificates',
+            "certmanagerid = ? AND userid $insql",
+            array_merge([$certid], $inparams)
+        );
 
         foreach ($certificates as $cert) {
             $fs->delete_area_files($context->id, 'mod_certmanager', 'certificates', $cert->userid);
         }
 
-        $DB->delete_records_select('certmanager_certificates', "certmanagerid = ? AND userid $insql",
-            array_merge([$certid], $inparams));
+        $DB->delete_records_select(
+            'certmanager_certificates',
+            "certmanagerid = ? AND userid $insql",
+            array_merge([$certid], $inparams)
+        );
     }
 }

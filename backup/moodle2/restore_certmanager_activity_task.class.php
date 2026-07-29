@@ -26,7 +26,6 @@ require_once($CFG->dirroot . '/mod/certmanager/backup/moodle2/restore_certmanage
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class restore_certmanager_activity_task extends restore_activity_task {
-
     /**
      * Define particular settings this activity can have.
      *
