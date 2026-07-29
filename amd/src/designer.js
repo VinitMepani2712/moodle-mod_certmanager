@@ -1,3 +1,28 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * Certificate designer AMD module - Drag & resize elements on a mm-scaled canvas.
+ *
+ * Sends live updates to the External API on drag-end / resize-end.
+ *
+ * @package    mod_certmanager
+ * @copyright  2026 Vinit Mepani
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 // Certificate designer: drag & resize elements on a mm-scaled canvas.
 // Sends live updates to ajax.php on drag-end / resize-end.
 define(['jquery'], function($) {
@@ -117,9 +142,12 @@ define(['jquery'], function($) {
             function onMove(ev) {
                 var newW = Math.max(10, startW + (ev.clientX - startX));
                 var newH = Math.max(10, startH + (ev.clientY - startY));
-                // Cap so element doesn't overflow.
-                newW = Math.min(newW, canvasRect.width - elRect.left + canvasRect.left);
-                newH = Math.min(newH, canvasRect.height - elRect.top + canvasRect.top);
+                // Cap so element doesn't overflow canvas.
+                // Maximum width/height available from element's current position to canvas edge.
+                var maxW = canvasRect.width - (elRect.left - canvasRect.left);
+                var maxH = canvasRect.height - (elRect.top - canvasRect.top);
+                newW = Math.min(newW, maxW);
+                newH = Math.min(newH, maxH);
                 el.style.width  = (newW / canvasRect.width) * 100 + '%';
                 el.style.height = (newH / canvasRect.height) * 100 + '%';
             }

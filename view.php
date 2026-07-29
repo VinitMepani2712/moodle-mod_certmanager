@@ -44,7 +44,6 @@ if ($id) {
 }
 
 require_login($course, true, $cm);
-require_capability('mod/certmanager:view', context_module::instance($cm->id));
 
 $isteacher = has_capability('moodle/course:manageactivities', context_course::instance($course->id));
 
@@ -128,6 +127,8 @@ if ($action === 'award' && $isteacher && confirm_sesskey()) {
 $PAGE->set_url('/mod/certmanager/view.php', ['id' => $cm->id]);
 $PAGE->set_title(format_string($certmanager->name));
 $PAGE->set_heading(format_string($certmanager->name));
+
+certmanager_view($certmanager, $course, $cm, context_module::instance($cm->id));
 
 $state = state_machine::get_or_create_state($certmanager->id, $USER->id);
 

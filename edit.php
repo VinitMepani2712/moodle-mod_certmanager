@@ -133,9 +133,9 @@ echo '<form method="get" action="' . $pageurl->out(false) .
 echo '<input type="hidden" name="id" value="' . (int)$id . '">';
 echo '<input type="hidden" name="action" value="add">';
 echo '<input type="hidden" name="sesskey" value="' . sesskey() . '">';
-echo '<label style="margin:0;"><strong>Add element:</strong></label>';
+echo '<label style="margin:0;"><strong>' . get_string('addelement', 'mod_certmanager') . '</strong></label>';
 echo '<select name="type" onchange="if(this.value){this.form.submit()}">';
-echo '<option value="">— choose —</option>';
+echo '<option value="">' . get_string('chooseelement', 'mod_certmanager') . '</option>';
 foreach (factory::get_type_menu() as $key => $label) {
     echo '<option value="' . s($key) . '">' . s($label) . '</option>';
 }
@@ -277,9 +277,9 @@ echo html_writer::end_div(); // Canvas panel.
 
 // Side panel: element list with reorder controls.
 echo html_writer::start_div('certmanager-side-panel');
-echo html_writer::tag('h4', 'Elements');
+echo html_writer::tag('h4', get_string('elements', 'mod_certmanager'));
 if (empty($elements)) {
-    echo '<p class="text-muted">No elements yet. Add some using the toolbar above.</p>';
+    echo '<p class="text-muted">' . get_string('noelementsyet', 'mod_certmanager') . '</p>';
 } else {
     // Show background first in the list too, but without reorder buttons.
     $listorder = [];
@@ -356,14 +356,14 @@ if (empty($elements)) {
         }
         echo ' ' . html_writer::link(
             $editurl,
-            'Edit',
+            get_string('edit'),
             ['class' => 'btn btn-sm btn-outline-primary']
         );
         echo ' ' . html_writer::link(
             $delurl,
-            'Delete',
+            get_string('delete'),
             ['class' => 'btn btn-sm btn-outline-danger',
-             'onclick' => "return confirm('Delete this element?');",
+             'onclick' => "return confirm('" . addslashes(get_string('deleteelement', 'mod_certmanager')) . "');",
             ]
         );
         echo '</div>';

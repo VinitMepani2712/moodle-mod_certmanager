@@ -50,7 +50,7 @@ try {
     $pdf = $generator->generate($certmanager, $USER, $fakecert);
 } catch (\Throwable $e) {
     header('Content-Type: text/plain');
-    echo 'Preview generation failed: ' . $e->getMessage();
+    echo get_string('previewfailed', 'mod_certmanager') . $e->getMessage();
     exit;
 }
 

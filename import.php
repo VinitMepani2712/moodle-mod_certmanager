@@ -42,7 +42,7 @@ require_capability('moodle/course:manageactivities', context_course::instance($c
 $pageurl = new moodle_url('/mod/certmanager/import.php', ['id' => $id]);
 $backurl = new moodle_url('/mod/certmanager/edit.php', ['id' => $id]);
 $PAGE->set_url($pageurl);
-$PAGE->set_title(format_string($certmanager->name) . ' - Import template');
+$PAGE->set_title(format_string($certmanager->name) . ' - ' . get_string('importtemplate', 'mod_certmanager'));
 $PAGE->set_heading(format_string($certmanager->name));
 $PAGE->set_pagelayout('admin');
 

@@ -395,7 +395,7 @@ echo $OUTPUT->footer();
  * @param int $fileid The file ID
  * @return ?\stored_file The file object or null
  */
-function get_file_instance_by_id($fileid) {
+function certmanager_get_file_instance_by_id($fileid) {
     global $DB;
     $file = $DB->get_record('files', ['id' => $fileid]);
     if ($file) {

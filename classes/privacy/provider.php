@@ -24,10 +24,12 @@ use core_privacy\local\request\transform;
 use core_privacy\local\request\userlist;
 use core_privacy\local\request\writer;
 use context;
-use context_system;
+use context_module;
 
 /**
  * Privacy API provider for mod_certmanager.
+ *
+ * Handles export and deletion of user data stored in the certmanager plugin.
  *
  * @package    mod_certmanager
  * @copyright  2026 Vinit Mepani
@@ -37,13 +39,6 @@ class provider implements
     \core_privacy\local\metadata\provider,
     \core_privacy\local\request\core_userlist_provider,
     \core_privacy\local\request\plugin\provider {
-    /** @var string[] Tables holding per-user data. */
-    const USERTABLES = [
-        'mod_certmanager_assign',
-        'mod_certmanager_state',
-        'mod_certmanager_history',
-        'mod_certmanager_notif_log',
-    ];
 
     /**
      * Describe the personal data stored by this plugin.
@@ -52,71 +47,125 @@ class provider implements
      * @return collection
      */
     public static function get_metadata(collection $collection): collection {
-        $collection->add_database_table('mod_certmanager_assign', [
-            'userid' => 'privacy:metadata:userid',
-            'certid' => 'privacy:metadata:certid',
-            'source' => 'privacy:metadata:source',
-            'timecreated' => 'privacy:metadata:timecreated',
-        ], 'privacy:metadata:assign');
 
-        $collection->add_database_table('mod_certmanager_state', [
+        // Table: certmanager_state
+        // Stores the user's certification state (status, dates, progress).
+        $collection->add_database_table('certmanager_state', [
             'userid' => 'privacy:metadata:userid',
-            'certid' => 'privacy:metadata:certid',
+            'usermodified' => 'privacy:metadata:usermodified',
             'status' => 'privacy:metadata:status',
+            'progresspct' => 'privacy:metadata:progresspct',
             'timecertified' => 'privacy:metadata:timecertified',
             'timeexpires' => 'privacy:metadata:timeexpires',
-        ], 'privacy:metadata:state');
+            'timewindowopens' => 'privacy:metadata:timewindowopens',
+            'timelapsed' => 'privacy:metadata:timelapsed',
+            'timecreated' => 'privacy:metadata:timecreated',
+            'timemodified' => 'privacy:metadata:timemodified',
+        ], 'privacy:metadata:certmanager_state');
 
-        $collection->add_database_table('mod_certmanager_history', [
+        // Table: certmanager_certificates
+        // Stores generated certificate metadata and generated PDF files.
+        $collection->add_database_table('certmanager_certificates', [
             'userid' => 'privacy:metadata:userid',
-            'certid' => 'privacy:metadata:certid',
-            'fromstatus' => 'privacy:metadata:status',
-            'tostatus' => 'privacy:metadata:status',
+            'code' => 'privacy:metadata:code',
+            'codehash' => 'privacy:metadata:codehash',
+            'timecertified' => 'privacy:metadata:timecertified',
+            'timeexpires' => 'privacy:metadata:timeexpires',
+            'timecreated' => 'privacy:metadata:timecreated',
+            'timemodified' => 'privacy:metadata:timemodified',
+        ], 'privacy:metadata:certmanager_certificates');
+
+        // Table: certmanager_history
+        // Stores audit trail of state changes (who changed status, when, why).
+        $collection->add_database_table('certmanager_history', [
+            'userid' => 'privacy:metadata:userid',
+            'actorid' => 'privacy:metadata:actorid',
+            'fromstatus' => 'privacy:metadata:fromstatus',
+            'tostatus' => 'privacy:metadata:tostatus',
             'reason' => 'privacy:metadata:reason',
             'timecreated' => 'privacy:metadata:timecreated',
-        ], 'privacy:metadata:history');
+        ], 'privacy:metadata:certmanager_history');
 
-        $collection->add_database_table('mod_certmanager_notif_log', [
-            'userid' => 'privacy:metadata:userid',
-            'certid' => 'privacy:metadata:certid',
-            'notiftype' => 'privacy:metadata:notiftype',
-            'timesent' => 'privacy:metadata:timesent',
-        ], 'privacy:metadata:notiflog');
+        // File area: certificates
+        // Stores generated certificate PDF files. Itemid is the userid.
+        $collection->add_files('mod_certmanager', 'certificates', 'privacy:metadata:certificates');
 
         return $collection;
     }
 
     /**
-     * Contexts containing data for a user (all data lives in the system context).
+     * Get the contexts for a user where data is stored.
+     *
+     * For certmanager, all user data is stored at the module level.
      *
      * @param int $userid User id.
      * @return contextlist
      */
     public static function get_contexts_for_userid(int $userid): contextlist {
         global $DB;
+
         $contextlist = new contextlist();
-        foreach (self::USERTABLES as $table) {
-            if ($DB->record_exists($table, ['userid' => $userid])) {
-                $contextlist->add_system_context();
-                break;
-            }
-        }
+
+        $sql = "
+            SELECT DISTINCT c.id
+              FROM {context} c
+              INNER JOIN {course_modules} cm ON cm.id = c.instanceid AND c.contextlevel = ?
+              INNER JOIN {certmanager} cert ON cert.id = cm.instance
+             WHERE (
+                   EXISTS (SELECT 1 FROM {certmanager_state} WHERE userid = ? AND certmanagerid = cert.id)
+                OR EXISTS (SELECT 1 FROM {certmanager_certificates} WHERE userid = ? AND certmanagerid = cert.id)
+                OR EXISTS (SELECT 1 FROM {certmanager_history} WHERE userid = ? AND certmanagerid = cert.id)
+             )
+        ";
+
+        $contextlist->add_from_sql($sql, [
+            CONTEXT_MODULE,
+            $userid,
+            $userid,
+            $userid,
+        ]);
+
         return $contextlist;
     }
 
     /**
-     * Users with data in a given context.
+     * Get users in a specific context.
      *
      * @param userlist $userlist The userlist to populate.
      * @return void
      */
     public static function get_users_in_context(userlist $userlist) {
-        if (!$userlist->get_context() instanceof context_system) {
+        $context = $userlist->get_context();
+
+        if (!$context instanceof context_module) {
             return;
         }
-        foreach (self::USERTABLES as $table) {
-            $userlist->add_from_sql('userid', "SELECT userid FROM {{$table}}", []);
-        }
+
+        $sql = "
+            SELECT DISTINCT userid
+              FROM {certmanager_state}
+             WHERE certmanagerid = (
+                   SELECT instance FROM {course_modules} WHERE id = ?
+             )
+            UNION
+            SELECT DISTINCT userid
+              FROM {certmanager_certificates}
+             WHERE certmanagerid = (
+                   SELECT instance FROM {course_modules} WHERE id = ?
+             )
+            UNION
+            SELECT DISTINCT userid
+              FROM {certmanager_history}
+             WHERE certmanagerid = (
+                   SELECT instance FROM {course_modules} WHERE id = ?
+             )
+        ";
+
+        $userlist->add_from_sql('userid', $sql, [
+            $context->instanceid,
+            $context->instanceid,
+            $context->instanceid,
+        ]);
     }
 
     /**
@@ -129,86 +178,175 @@ class provider implements
         global $DB;
 
         $userid = $contextlist->get_user()->id;
-        $hassystem = false;
+
         foreach ($contextlist->get_contexts() as $context) {
-            if ($context instanceof context_system) {
-                $hassystem = true;
+            if (!$context instanceof context_module) {
+                continue;
+            }
+
+            $certid = $DB->get_field('course_modules', 'instance', ['id' => $context->instanceid]);
+            if (!$certid) {
+                continue;
+            }
+
+            $subcontext = [get_string('pluginname', 'mod_certmanager')];
+
+            // Export certification state.
+            $state = $DB->get_record('certmanager_state', [
+                'certmanagerid' => $certid,
+                'userid' => $userid,
+            ]);
+
+            if ($state) {
+                $stateexport = (object) [
+                    'status' => (int) $state->status,
+                    'progress_percent' => (int) $state->progresspct,
+                    'time_certified' => $state->timecertified ? transform::datetime($state->timecertified) : null,
+                    'time_expires' => $state->timeexpires ? transform::datetime($state->timeexpires) : null,
+                    'time_window_opens' => $state->timewindowopens ? transform::datetime($state->timewindowopens) : null,
+                    'time_lapsed' => $state->timelapsed ? transform::datetime($state->timelapsed) : null,
+                    'time_created' => transform::datetime($state->timecreated),
+                    'time_modified' => transform::datetime($state->timemodified),
+                ];
+
+                if ($state->usermodified > 0) {
+                    $stateexport->last_modified_by = transform::user($state->usermodified);
+                }
+
+                writer::with_context($context)->export_data(
+                    array_merge($subcontext, [get_string('privacy:path:state', 'mod_certmanager')]),
+                    $stateexport
+                );
+            }
+
+            // Export generated certificates.
+            $certificate = $DB->get_record('certmanager_certificates', [
+                'certmanagerid' => $certid,
+                'userid' => $userid,
+            ]);
+
+            if ($certificate) {
+                $certexport = (object) [
+                    'verification_code' => $certificate->code,
+                    'time_certified' => $certificate->timecertified ? transform::datetime($certificate->timecertified) : null,
+                    'time_expires' => $certificate->timeexpires ? transform::datetime($certificate->timeexpires) : null,
+                    'time_created' => transform::datetime($certificate->timecreated),
+                    'time_modified' => transform::datetime($certificate->timemodified),
+                ];
+
+                writer::with_context($context)->export_data(
+                    array_merge($subcontext, [get_string('privacy:path:certificates', 'mod_certmanager')]),
+                    $certexport
+                );
+
+                // Export the certificate PDF file.
+                writer::with_context($context)->export_files(
+                    array_merge($subcontext, [get_string('privacy:path:certificates', 'mod_certmanager')]),
+                    'certificates'
+                );
+            }
+
+            // Export state change history.
+            $history = $DB->get_records('certmanager_history', [
+                'certmanagerid' => $certid,
+                'userid' => $userid,
+            ], 'timecreated ASC');
+
+            if ($history) {
+                $historyexport = [];
+                foreach ($history as $entry) {
+                    $historyexport[] = (object) [
+                        'from_status' => (int) $entry->fromstatus,
+                        'to_status' => (int) $entry->tostatus,
+                        'reason' => $entry->reason,
+                        'actor' => $entry->actorid > 0 ? transform::user($entry->actorid) : null,
+                        'time_created' => transform::datetime($entry->timecreated),
+                    ];
+                }
+
+                writer::with_context($context)->export_data(
+                    array_merge($subcontext, [get_string('privacy:path:history', 'mod_certmanager')]),
+                    (object) ['entries' => $historyexport]
+                );
             }
         }
-        if (!$hassystem) {
-            return;
-        }
-
-        $context = context_system::instance();
-        $subcontext = [get_string('pluginname', 'mod_certmanager')];
-
-        $sql = 'SELECT s.*, c.name AS certname
-                  FROM {mod_certmanager_state} s
-                  JOIN {mod_certmanager_cert} c ON c.id = s.certid
-                 WHERE s.userid = :userid';
-        $states = $DB->get_records_sql($sql, ['userid' => $userid]);
-
-        $export = [];
-        foreach ($states as $state) {
-            $export[] = (object) [
-                'certification' => format_string($state->certname),
-                'status' => (int) $state->status,
-                'timecertified' => $state->timecertified
-                    ? transform::datetime($state->timecertified) : null,
-                'timeexpires' => $state->timeexpires
-                    ? transform::datetime($state->timeexpires) : null,
-            ];
-        }
-        writer::with_context($context)->export_data($subcontext, (object) ['certifications' => $export]);
-
-        $history = $DB->get_records('mod_certmanager_history', ['userid' => $userid], 'timecreated ASC');
-        $historyexport = [];
-        foreach ($history as $entry) {
-            $historyexport[] = (object) [
-                'certid' => (int) $entry->certid,
-                'fromstatus' => (int) $entry->fromstatus,
-                'tostatus' => (int) $entry->tostatus,
-                'reason' => $entry->reason,
-                'timecreated' => transform::datetime($entry->timecreated),
-            ];
-        }
-        writer::with_context($context)->export_data(
-            array_merge($subcontext, [get_string('privacy:path:history', 'mod_certmanager')]),
-            (object) ['history' => $historyexport]
-        );
     }
 
     /**
-     * Delete all user data in a context.
+     * Delete all user data in a context (used by site admins to purge all data).
      *
      * @param context $context The context to purge.
      * @return void
      */
     public static function delete_data_for_all_users_in_context(context $context) {
         global $DB;
-        if (!$context instanceof context_system) {
+
+        if (!$context instanceof context_module) {
             return;
         }
-        foreach (self::USERTABLES as $table) {
-            $DB->delete_records($table);
+
+        $certid = $DB->get_field('course_modules', 'instance', ['id' => $context->instanceid]);
+        if (!$certid) {
+            return;
         }
+
+        // Delete state records for this certification.
+        $states = $DB->get_records('certmanager_state', ['certmanagerid' => $certid]);
+        foreach ($states as $state) {
+            $DB->delete_records('certmanager_history', [
+                'certmanagerid' => $certid,
+                'userid' => $state->userid,
+            ]);
+        }
+        $DB->delete_records('certmanager_state', ['certmanagerid' => $certid]);
+
+        // Delete certificate records and files.
+        $fs = get_file_storage();
+        $certificates = $DB->get_records('certmanager_certificates', ['certmanagerid' => $certid]);
+        foreach ($certificates as $cert) {
+            $fs->delete_area_files($context->id, 'mod_certmanager', 'certificates', $cert->userid);
+        }
+        $DB->delete_records('certmanager_certificates', ['certmanagerid' => $certid]);
     }
 
     /**
-     * Delete all data for one user.
+     * Delete all data for one user in approved contexts.
      *
      * @param approved_contextlist $contextlist Approved contexts for the user.
      * @return void
      */
     public static function delete_data_for_user(approved_contextlist $contextlist) {
         global $DB;
+
         $userid = $contextlist->get_user()->id;
+        $fs = get_file_storage();
+
         foreach ($contextlist->get_contexts() as $context) {
-            if ($context instanceof context_system) {
-                foreach (self::USERTABLES as $table) {
-                    $DB->delete_records($table, ['userid' => $userid]);
-                }
+            if (!$context instanceof context_module) {
+                continue;
             }
+
+            $certid = $DB->get_field('course_modules', 'instance', ['id' => $context->instanceid]);
+            if (!$certid) {
+                continue;
+            }
+
+            // Delete state record and associated history.
+            $DB->delete_records('certmanager_history', [
+                'certmanagerid' => $certid,
+                'userid' => $userid,
+            ]);
+            $DB->delete_records('certmanager_state', [
+                'certmanagerid' => $certid,
+                'userid' => $userid,
+            ]);
+
+            // Delete certificate and its files.
+            $fs->delete_area_files($context->id, 'mod_certmanager', 'certificates', $userid);
+            $DB->delete_records('certmanager_certificates', [
+                'certmanagerid' => $certid,
+                'userid' => $userid,
+            ]);
         }
     }
 
@@ -220,16 +358,40 @@ class provider implements
      */
     public static function delete_data_for_users(approved_userlist $userlist) {
         global $DB;
-        if (!$userlist->get_context() instanceof context_system) {
+
+        $context = $userlist->get_context();
+        if (!$context instanceof context_module) {
             return;
         }
+
         $userids = $userlist->get_userids();
         if (empty($userids)) {
             return;
         }
-        [$insql, $inparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
-        foreach (self::USERTABLES as $table) {
-            $DB->delete_records_select($table, "userid $insql", $inparams);
+
+        $certid = $DB->get_field('course_modules', 'instance', ['id' => $context->instanceid]);
+        if (!$certid) {
+            return;
         }
+
+        [$insql, $inparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
+
+        // Delete state records and associated history for all these users.
+        $DB->delete_records_select('certmanager_history', "certmanagerid = ? AND userid $insql",
+            array_merge([$certid], $inparams));
+        $DB->delete_records_select('certmanager_state', "certmanagerid = ? AND userid $insql",
+            array_merge([$certid], $inparams));
+
+        // Delete certificates and their files for all these users.
+        $fs = get_file_storage();
+        $certificates = $DB->get_records_select('certmanager_certificates',
+            "certmanagerid = ? AND userid $insql", array_merge([$certid], $inparams));
+
+        foreach ($certificates as $cert) {
+            $fs->delete_area_files($context->id, 'mod_certmanager', 'certificates', $cert->userid);
+        }
+
+        $DB->delete_records_select('certmanager_certificates', "certmanagerid = ? AND userid $insql",
+            array_merge([$certid], $inparams));
     }
 }

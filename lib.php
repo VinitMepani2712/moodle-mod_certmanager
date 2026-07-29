@@ -123,6 +123,33 @@ function certmanager_supports($feature) {
 }
 
 /**
+ * Mark the activity completed (if required) and trigger the course_module_viewed event.
+ *
+ * @param stdClass $certmanager certmanager object
+ * @param stdClass $course course object
+ * @param stdClass $cm course module object
+ * @param context_module $context context object
+ */
+function certmanager_view($certmanager, $course, $cm, $context) {
+    // Trigger course_module_viewed event.
+    $params = [
+        'context' => $context,
+        'objectid' => $certmanager->id,
+    ];
+
+    $event = \mod_certmanager\event\course_module_viewed::create($params);
+    $event->add_record_snapshot('course_modules', $cm);
+    $event->add_record_snapshot('course', $course);
+    $event->add_record_snapshot('certmanager', $certmanager);
+    $event->trigger();
+
+    // Completion.
+    $completion = new completion_info($course);
+    $completion->set_module_viewed($cm);
+}
+
+
+/**
  * Serve files from the certmanager file areas.
  *
  * @param mixed $course
@@ -178,3 +205,4 @@ function certmanager_save_required_activities($certmanagerid, $data) {
         }
     }
 }
+
